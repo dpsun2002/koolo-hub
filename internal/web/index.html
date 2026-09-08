@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="qUISrYvo0ttuxEKnXQUGd5">
+<head data-page-node-id="C7hTSJxCmR9fHB9g3JYY5R">
+<meta charset="utf-8" data-page-node-id="jPAR8WMtDGLQEbXIdW8xQv" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" data-page-node-id="Yi1RhTN9WVzosiRwZFjHAS" />
+<title>KOLOO-HUB · Fleet Telemetry</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --bg:#0a0e14; --bg2:#0d131c; --panel:#101822; --panel2:#0c121a;
+  --line:#1c2733; --line2:#243445;
+  --ink:#dbe6f0; --ink2:#8aa0b4; --ink3:#5b7088;
+  --cyan:#22d3ee; --emerald:#34d399; --amber:#fbbf24; --rose:#fb7185; --violet:#a78bfa; --blue:#60a5fa;
+  --grid:rgba(86,120,150,.07);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Consolas,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f9; --bg2:#eef1f5; --panel:#ffffff; --panel2:#f7f9fc;
+  --line:#d8e0ea; --line2:#c4d0dd;
+  --ink:#0f1c26; --ink2:#4a5f72; --ink3:#8093a6;
+  --cyan:#0891b2; --emerald:#059669; --amber:#b45309; --rose:#e11d48; --violet:#7c3aed; --blue:#2563eb;
+  --grid:rgba(40,80,120,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px,28px 28px;
+  -webkit-font-smoothing:antialiased;
+}
+.tnum{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.3px}
+a{color:var(--cyan); text-decoration:none}
+
+/* ============ 顶栏 ============ */
+header{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:blur(8px);
+  background:linear-gradient(180deg,var(--bg) 60%,color-mix(in srgb,var(--bg) 80%,transparent));
+  border-bottom:1px solid var(--line);
+}
+.bar{display:flex; align-items:center; gap:14px; padding:12px 18px; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand .logo{font-family:var(--mono); font-weight:700; font-size:18px; letter-spacing:1px; color:var(--cyan)}
+.brand .sub{font-family:var(--mono); font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--ink3)}
+.meta{display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; color:var(--ink2)}
+.meta b{color:var(--ink); font-weight:600}
+.themeBtn, .adminLink{
+  font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  border:1px solid var(--line2); color:var(--ink2); background:var(--panel);
+  padding:6px 10px; border-radius:6px; cursor:pointer;
+}
+.themeBtn:hover,.adminLink:hover{color:var(--cyan); border-color:var(--cyan)}
+
+/* ============ KPI 磁贴 ============ */
+.kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; padding:16px 18px 4px}
+.kpi{
+  position:relative; background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px; overflow:hidden;
+}
+.kpi::before,.kpi::after{content:""; position:absolute; width:8px; height:8px; border:1px solid var(--line2)}
+.kpi::before{left:6px; top:6px; border-right:0; border-bottom:0}
+.kpi::after{right:6px; bottom:6px; border-left:0; border-top:0}
+.kpi .lab{font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--ink3)}
+.kpi .val{font-family:var(--mono); font-size:27px; font-weight:600; line-height:1.1; margin-top:6px; color:var(--ink)}
+.kpi .unit{font-size:12px; color:var(--ink2); margin-left:3px}
+.kpi .spark{position:absolute; right:0; bottom:0; opacity:.5}
+
+/* ============ 工具条 ============ */
+.toolbar{display:flex; gap:10px; align-items:center; padding:12px 18px; flex-wrap:wrap}
+.toolbar input,.toolbar select{
+  font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--panel);
+  border:1px solid var(--line2); border-radius:7px; padding:7px 10px; outline:none;
+}
+.toolbar input{flex:1; min-width:160px}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--cyan)}
+.chips{display:flex; gap:6px}
+.chip{
+  font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  border:1px solid var(--line2); color:var(--ink2); background:var(--panel);
+  padding:7px 11px; border-radius:7px; cursor:pointer; user-select:none;
+}
+.chip.on{color:var(--bg); background:var(--cyan); border-color:var(--cyan); font-weight:600}
+.refreshDot{width:8px;height:8px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);display:inline-block;margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ============ 角色网格 ============ */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; padding:6px 18px 40px}
+.card{
+  position:relative; background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line); border-radius:12px; padding:14px 14px 12px; overflow:hidden;
+}
+.card.off{opacity:.5}
+.card::before,.card::after{content:""; position:absolute; width:10px; height:10px; border:1px solid var(--line2); pointer-events:none}
+.card::before{left:7px; top:7px; border-right:0; border-bottom:0}
+.card::after{right:7px; top:7px; border-left:0; border-bottom:0}
+.card .row1{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+.led{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.led.on{background:var(--emerald);box-shadow:0 0 8px var(--emerald)}
+.led.off{background:#4b5563;box-shadow:none}
+.cname{font-family:var(--mono); font-size:16px; font-weight:600; color:var(--ink); margin-right:auto}
+.chipX{font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:3px 7px; border-radius:5px; border:1px solid currentColor}
+.chipX.cn-lightning{color:var(--cyan)} .chipX.cn-sorceress{color:var(--violet)} .chipX.cn-hammerdin{color:var(--amber)} .chipX.cn-paladin{color:var(--blue)} .chipX.cn-unknown{color:var(--ink3)}
+.statusline{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2); margin-bottom:12px; flex-wrap:wrap}
+.statusline .st{color:var(--ink); font-weight:600}
+.statusline .arrow{color:var(--ink3)}
+.tag{font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink3); border:1px solid var(--line2); border-radius:5px; padding:2px 7px}
+
+.metrics{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:12px}
+.metric{background:var(--panel); padding:9px 8px; text-align:center}
+.metric .ml{font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--ink3)}
+.metric .mv{font-family:var(--mono); font-size:18px; font-weight:600; color:var(--ink); margin-top:3px}
+.metric .mv.warn{color:var(--amber)} .metric .mv.bad{color:var(--rose)}
+
+.chartwrap{margin:4px 0 10px}
+.charttitle{font-family:var(--mono); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--ink3); margin-bottom:4px; display:flex; justify-content:space-between}
+.bar-h{display:flex; height:9px; border-radius:5px; overflow:hidden; background:var(--line); margin:6px 0}
+.bar-h > span{height:100%}
+.tasklist{margin-top:6px; display:flex; flex-direction:column; gap:5px}
+.task{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px}
+.task .tn{color:var(--ink2); width:84px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.task .tbar{flex:1; height:6px; background:var(--line); border-radius:3px; overflow:hidden}
+.task .tbar > i{display:block; height:100%; background:var(--cyan)}
+.task .tc{color:var(--ink); width:24px; text-align:right}
+
+.totals{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line2); display:flex; gap:14px; font-family:var(--mono); font-size:11px; color:var(--ink2); flex-wrap:wrap}
+.totals b{color:var(--ink)}
+
+.items{margin-top:10px; border-top:1px dashed var(--line2); padding-top:8px; display:none}
+.items.show{display:block}
+.items table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px}
+.items td{padding:3px 4px; border-bottom:1px solid var(--line); color:var(--ink2)}
+.items td.n{color:var(--ink); text-align:right; width:36px}
+.items td.q{color:var(--ink3); width:70px}
+.expand{cursor:pointer; font-family:var(--mono); font-size:11px; color:var(--cyan); user-select:none; margin-top:8px; display:inline-block}
+
+.foot{margin:0 18px 36px; padding-top:14px; border-top:1px solid var(--line); font-family:var(--mono); font-size:10px; color:var(--ink3); line-height:1.7; letter-spacing:.5px}
+.empty{padding:60px; text-align:center; color:var(--ink3); font-family:var(--mono); letter-spacing:2px}
+.err{padding:30px; color:var(--rose); font-family:var(--mono); font-size:12px; line-height:1.6}
+
+#tip{position:fixed; pointer-events:none; background:var(--bg2); border:1px solid var(--line2); color:var(--ink); font-family:var(--mono); font-size:11px; padding:5px 8px; border-radius:6px; opacity:0; transition:opacity .1s; z-index:200; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,.4)}
+
+@media (max-width:760px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .meta{display:none}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body data-page-node-id="d4tuyGq43XZTF6A7iI4fmI">
+<header data-page-node-id="9Y3nCJD9m8tY5YHNFwsGFD">
+  <div class="bar" data-page-node-id="Da7xTCmxInFEhUdFi2qzzQ">
+    <div class="brand" data-page-node-id="6ujsldamFbq3AnqcYALkSS">
+      <span class="logo" data-page-node-id="2SkotnOJwjHbFzWl9sanfQ">◢ KOLOO·HUB</span>
+      <span class="sub" data-page-node-id="BDEHMbPyGyfBSAUDdyzcoF">Fleet Telemetry</span>
+    </div>
+    <div class="meta" data-page-node-id="Tky3ZOU5c9RIDVBZHMfqp7">
+      <div data-page-node-id="HYiFvAIAr4tsR0LqKzw6ib">TENANT <b id="m-tenant" data-page-node-id="d3ZqoUoy7kByKh8MXE9KwW">—</b></div>
+      <div data-page-node-id="mIlXyiB7sn1SfdTt3cs93v">UTC+8 <b id="m-clock" data-page-node-id="vYZjaJhg32qGxePES3dSSg">--:--:--</b></div>
+      <div data-page-node-id="4qNucEnsCAFmGDPwCRUSCX">SYNC <b id="m-sync" data-page-node-id="6eOdw7g32olZUt0G6MLCRR">--</b></div>
+    </div>
+    <button class="adminLink" id="adminLink" data-page-node-id="M3M17QHoEzUSwXfZt4UbBE">ADMIN</button>
+    <button class="themeBtn" id="themeBtn" data-page-node-id="9iv7qB12sWN9wa41puquj5">◐ 主题</button>
+  </div>
+</header>
+
+<section class="kpis" id="kpis" data-page-node-id="PlQ0eipTDWWaICiXokJFAw"></section>
+
+<div class="toolbar" data-page-node-id="mG2cYg6cB7fOLUjUct8re4">
+  <input id="search" placeholder="搜索角色 / 机器 / 职业…" data-page-node-id="awaoNtXuQ4mVIlwavTr8kE" />
+  <div class="chips" data-page-node-id="ePaJFWZMmY7hRfaHUKQ5UJ">
+    <div class="chip on" data-f="all" data-page-node-id="n270Q913nAdiCfNeBVhVxE">全部</div>
+    <div class="chip" data-f="online" data-page-node-id="ZjyxkpzXeVISU84GQnaJ5C">在线</div>
+    <div class="chip" data-f="offline" data-page-node-id="eYMVVMrDRnDipNoaHI1Pbo">离线</div>
+  </div>
+  <select id="sort" data-page-node-id="B2oyqexj5uWVg0cNDhY4yp">
+    <option value="name" data-page-node-id="OIY5s5nYJ9ipPGyqUFdted">排序·角色名</option>
+    <option value="last" data-page-node-id="VTF9xVuonn1PBqepL1kVqD">排序·最近活跃</option>
+    <option value="runs" data-page-node-id="9A1HRKnPtIvGIBJAmo5rPy">排序·今日完成</option>
+    <option value="work" data-page-node-id="WuWo6tfNKyn6rDxiGGwlYk">排序·今日时长</option>
+  </select>
+  <select id="iv" data-page-node-id="1ybev3tkjcrOkpHM3zaZ2w">
+    <option value="10000" data-page-node-id="DD07DTmjdH9fzTBElTPbQB">刷新·10s</option>
+    <option value="15000" selected data-page-node-id="1sq0nn8lPMNGc2RxgYDdfp">刷新·15s</option>
+    <option value="30000" data-page-node-id="que03pcknMK9go2WANbRAv">刷新·30s</option>
+    <option value="0" data-page-node-id="Di1VmiyrzODYfFGs8CuRoB">刷新·手动</option>
+  </select>
+  <span class="chip" id="refreshBtn" data-page-node-id="tpbFvDOIwV0GjjdYbIdoTC"><span class="refreshDot" data-page-node-id="vDfpfeQap553RLvGLeH0AE"></span>刷新</span>
+</div>
+
+<main class="grid" id="grid" data-page-node-id="08cy0a6btHdYievjzf03UZ"></main>
+<div class="foot" id="foot" data-page-node-id="71H6oCAlfgJWNwwWOG4yEZ"></div>
+<div id="tip" data-page-node-id="VoS3uocFF8mucFrNEdfyxj"></div>
+
+<script>
+const KEY = (new URLSearchParams(location.search).get('key')||localStorage.getItem('kh_key')||'');
+if(KEY) localStorage.setItem('kh_key',KEY);
+
+const CLASS_CN = {sorceress:'法师',lightning:'电法',hammerdin:'锤丁',paladin:'圣骑',paladin_level:'练级','':'未设'};
+const STATUS_CN = {working:'工作中',resting:'休息中',blocked:'停机时段',starting:'启动中',offline:'离线'};
+
+const state = {data:null, filter:'all', q:'', sort:'name', iv:15000, last:0};
+
+function hms(sec){
+  sec=Math.floor(sec||0);
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  if(h>0) return h+'h'+String(m).padStart(2,'0')+'m';
+  if(m>0) return m+'m'+String(s).padStart(2,'0')+'s';
+  return s+'s';
+}
+function ago(ts){
+  if(!ts) return '从未';
+  const d=Date.now()-ts;
+  if(d<60000) return Math.floor(d/1000)+'s 前';
+  if(d<3600000) return Math.floor(d/60000)+'m 前';
+  if(d<86400000) return Math.floor(d/3600000)+'h 前';
+  return Math.floor(d/86400000)+'d 前';
+}
+function esc(s){return (s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function statusColor(c){return {working:'var(--emerald)',resting:'var(--amber)',blocked:'var(--ink3)',starting:'var(--cyan)',offline:'#4b5563'}[c]||'var(--ink3)'}
+
+function renderKPI(d){
+  const el=document.getElementById('kpis');
+  const s=d.sum_today||{};
+  const alert=(s.deaths||0)+(s.chickens||0)+(s.errors||0);
+  const tiles=[
+    {l:'在线角色',v:(s.online||0),u:'/ '+(s.total||0),c:''},
+    {l:'今日总时长',v:hms(s.work_sec||0),u:'',c:''},
+    {l:'今日完成',v:(s.runs_ok||0),u:'runs',c:''},
+    {l:'今日拾取',v:(s.picks||0),u:'items',c:''},
+    {l:'今日告警',v:alert,u:'alerts',c:alert>0?'bad':''},
+  ];
+  el.innerHTML=tiles.map(t=>`
+    <div class="kpi">
+      <div class="lab">${t.l}</div>
+      <div class="val ${t.c}">${t.v}<span class="unit">${t.u}</span></div>
+    </div>`).join('');
+}
+
+function card(c){
+  const online=c.online;
+  const cls='cn-'+ (c.class||'unknown');
+  const alertCnt=c.today.deaths+c.today.chickens+c.today.errors;
+  const alertCls=alertCnt>0?'bad':'';
+  const tasks=Object.entries(c.runs_by_task||{}).sort((a,b)=>b[1]-a[1]);
+  const maxT=Math.max(1,...tasks.map(t=>t[1]));
+  const tasksHtml=tasks.length? tasks.map(([n,v])=>`
+    <div class="task"><span class="tn">${esc(n)}</span>
+      <span class="tbar"><i style="width:${Math.round(v/maxT*100)}%"></i></span>
+      <span class="tc">${v}</span></div>`).join('')
+    : '<div class="task" style="color:var(--ink3)">今日暂无完成记录</div>';
+  const items=aggregateItems(c.items||[]);
+  const itemsHtml=items.length? items.map(it=>`
+    <tr><td>${esc(it.name)}</td><td class="q">${esc(it.quality)}</td><td class="n">${it.count}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="color:var(--ink3)">暂无拾取</td></tr>';
+
+  const until=c.until||0;
+  const countdown = (online && until>Date.now()) ? `· 剩余 <b style="color:var(--amber)">${hms((until-Date.now())/1000)}</b> 开工` : '';
+  const runHtml = c.current_run ? `<span class="st">${esc(c.status_text)}</span><span class="arrow">›</span> 当前 <b style="color:var(--ink)">${esc(c.current_run)}</b>${countdown}` : `<span class="st">${esc(c.status_text)}</span>`;
+
+  return `
+  <div class="card ${online?'':'off'}" data-name="${esc(c.char)}" data-online="${online}">
+    <div class="row1">
+      <span class="led ${online?'on':'off'}"></span>
+      <span class="cname">${esc(c.char)}</span>
+      <span class="chipX ${cls}">${CLASS_CN[c.class]||CLASS_CN['']||c.class}</span>
+    </div>
+    <div class="statusline">${runHtml} ${c.machine?`· <span class="tag">${esc(c.machine)}</span>`:''} ${online?`· ${ago(c.last_seen)}` : `· 离线 ${ago(c.last_seen)}`}</div>
+    <div class="metrics">
+      <div class="metric"><div class="ml">今日完成</div><div class="mv">${(c.today.runs_ok||0)}</div></div>
+      <div class="metric"><div class="ml">今日时长</div><div class="mv">${hms(c.today.work_sec||0)}</div></div>
+      <div class="metric"><div class="ml">今日拾取</div><div class="mv">${(c.today.picks||0)}</div></div>
+      <div class="metric"><div class="ml">今日告警</div><div class="mv ${alertCls}">${alertCnt}</div></div>
+    </div>
+    <div class="chartwrap">
+      <div class="charttitle"><span>§ 近7日 · 完成数 / 时长</span><span>${(c.series||[]).length?c.series[c.series.length-1].day.slice(5):''}</span></div>
+      ${bars7(c.series)}
+    </div>
+    <div class="charttitle" style="margin-top:8px">任务分布 (今日完成)</div>
+    <div class="tasklist">${tasksHtml}</div>
+    <div class="totals">
+      <span>历史累计完成 <b>${(c.totals.runs_ok||0).toLocaleString()}</b></span>
+      <span>拾取 <b>${(c.totals.picks||0).toLocaleString()}</b></span>
+      <span>时长 <b>${hms(c.totals.work_sec||0)}</b></span>
+      <span>活跃天 <b>${(c.totals.days||0)}</b></span>
+    </div>
+    <span class="expand" data-target="it-${esc(c.char)}">▸ 查看今日拾取明细 (${(c.items||[]).length})</span>
+    <div class="items" id="it-${esc(c.char)}">
+      <table><tbody>${itemsHtml}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function bars7(series){
+  const arr=(series||[]);
+  if(arr.length===0) return '<div style="color:var(--ink3);font-family:var(--mono);font-size:11px">无数据</div>';
+  const w=260,h=46,bw=w/arr.length, mx=Math.max(1,...arr.map(p=>p.runs_ok));
+  let r='', lab='';
+  arr.forEach((p,i)=>{
+    const bh=Math.max(2,(p.runs_ok/mx)*(h-14));
+    const x=i*bw+2, y=h-12-bh;
+    r+=`<rect x="${x}" y="${y}" width="${bw-4}" height="${bh}" rx="1" fill="var(--cyan)" opacity="${0.5+i*0.07}" data-tip="${p.day} · 完成 ${p.runs_ok} · ${hms(p.work_sec)}"></rect>`;
+    lab+=`<text x="${x+(bw-4)/2}" y="${h-1}" fill="var(--ink3)" font-size="8" font-family="var(--mono)" text-anchor="middle">${p.day.slice(5)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="margin-top:2px">${r}${lab}</svg>`;
+}
+
+function aggregateItems(items){
+  const m={};
+  for(const it of items){const k=it.name+'|'+it.quality; m[k]=m[k]||{name:it.name,quality:it.quality,count:0}; m[k].count++;}
+  return Object.values(m).sort((a,b)=>b.count-a.count);
+}
+
+function render(){
+  const d=state.data; if(!d) return;
+  document.getElementById('m-tenant').textContent=d.tenant||'—';
+  renderKPI(d);
+  let chars=(d.chars||[]).slice();
+  if(state.q){
+    const q=state.q.toLowerCase();
+    chars=chars.filter(c=>(c.char+' '+c.machine+' '+c.class).toLowerCase().includes(q));
+  }
+  if(state.filter==='online') chars=chars.filter(c=>c.online);
+  if(state.filter==='offline') chars=chars.filter(c=>!c.online);
+  const by={name:(a,b)=>a.char.localeCompare(b.char),
+    last:(a,b)=>(b.last_seen||0)-(a.last_seen||0),
+    runs:(a,b)=>(b.today.runs_ok||0)-(a.today.runs_ok||0),
+    work:(a,b)=>(b.today.work_sec||0)-(a.today.work_sec||0)};
+  chars.sort(by[state.sort]||by.name);
+  const grid=document.getElementById('grid');
+  if(chars.length===0){grid.innerHTML='<div class="empty">NO DATA · 暂无匹配的角色</div>';}
+  else grid.innerHTML=chars.map(card).join('');
+  document.getElementById('foot').innerHTML=
+    `数据保留 90 天明细 · daily 聚合永久 · 时区 UTC+8 · 服务端就绪<br>`+
+    `API  /api/v1/dashboard?key=••••  ·  /api/v1/ingest  ·  last sync ${ago(state.last)}  ·  ${chars.length} 角色展示`;
+  bindTips(); bindExpand();
+}
+
+function bindTips(){
+  const tip=document.getElementById('tip');
+  document.querySelectorAll('[data-tip]').forEach(el=>{
+    el.addEventListener('mousemove',e=>{tip.textContent=el.getAttribute('data-tip');tip.style.opacity=1;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';});
+    el.addEventListener('mouseleave',()=>tip.style.opacity=0);
+  });
+}
+function bindExpand(){
+  document.querySelectorAll('.expand').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const t=document.getElementById(el.getAttribute('data-target'));
+      const show=t.classList.toggle('show');
+      el.textContent=(show?'▾':'▸')+el.textContent.slice(1);
+    });
+  });
+}
+
+async function load(){
+  if(!KEY){document.getElementById('grid').innerHTML='<div class="err">缺少查看密钥：URL 需带 ?key=xxxx 参数</div>';return;}
+  try{
+    const r=await fetch('/api/v1/dashboard?key='+encodeURIComponent(KEY));
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status));}
+    state.data=await r.json(); state.last=Date.now();
+    document.getElementById('m-sync').textContent='OK '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
+    render();
+  }catch(e){
+    document.getElementById('grid').innerHTML='<div class="err">LOAD ERROR: '+esc(e.message)+'</div>';
+    document.getElementById('m-sync').textContent='ERR';
+  }
+}
+
+function tick(){
+  const n=new Date(Date.now()+8*3600*1000);
+  document.getElementById('m-clock').textContent=n.toISOString().slice(11,19);
+}
+
+document.getElementById('search').addEventListener('input',e=>{state.q=e.target.value;render();});
+document.querySelectorAll('.chip[data-f]').forEach(ch=>ch.addEventListener('click',()=>{
+  document.querySelectorAll('.chip[data-f]').forEach(x=>x.classList.remove('on'));
+  ch.classList.add('on'); state.filter=ch.getAttribute('data-f'); render();
+}));
+document.getElementById('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+document.getElementById('iv').addEventListener('change',e=>{state.iv=+e.target.value; setupTimer();});
+document.getElementById('refreshBtn').addEventListener('click',load);
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('kh_theme',next);
+});
+document.getElementById('adminLink').addEventListener('click',()=>{location.href='/admin';});
+
+let timer=null;
+function setupTimer(){ if(timer)clearInterval(timer); if(state.iv>0) timer=setInterval(load,state.iv); }
+(function init(){
+  const t=localStorage.getItem('kh_theme')||'dark'; document.documentElement.setAttribute('data-theme',t);
+  tick(); setInterval(tick,1000); load(); setupTimer();
+})();
+</script>
+</body>
+</html>

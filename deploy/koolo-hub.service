@@ -1,0 +1,24 @@
+[Unit]
+Description=koolo-hub 集中监控服务端
+After=network.target
+
+[Service]
+Type=simple
+User=koolohub
+Group=koolohub
+WorkingDirectory=/var/lib/koolo-hub
+ExecStart=/usr/local/bin/koolo-hub serve --addr :8080 --db /var/lib/koolo-hub/hub.db
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 基础加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/koolo-hub
+
+[Install]
+WantedBy=multi-user.target
