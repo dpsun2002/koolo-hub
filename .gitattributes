@@ -1,0 +1,12 @@
+# 强制仓库内统一用 LF，避免 Windows CRLF 破坏 Linux 上的 bash 脚本
+* text=auto
+
+*.sh    text eol=lf
+*.go    text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.mod   text eol=lf
+*.sum   text eol=lf
+*.json  text eol=lf
