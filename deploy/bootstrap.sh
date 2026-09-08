@@ -3,7 +3,7 @@
 # koolo-hub 服务端一键引导（在阿里云 Ubuntu 22.04 上以 root 运行）
 #
 # 用法（复制一行到服务器执行即可）：
-#   bash <(curl -fsSL https://raw.githubusercontent.com/dpsun/koolo-hub/main/deploy/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/dpsun2002/koolo-hub/main/deploy/bootstrap.sh)
 #
 # 它会自动：
 #   1. 从 GitHub Releases 下载预编译的 Linux 二进制（无需在服务器装 Go）
@@ -18,7 +18,7 @@
 # ============================================================================
 set -euo pipefail
 
-REPO="dpsun/koolo-hub"
+REPO="dpsun2002/koolo-hub"
 RAW="https://raw.githubusercontent.com/${REPO}/main"
 PORT="${KOLOO_PORT:-8080}"
 DB_PATH="/var/lib/koolo-hub/hub.db"

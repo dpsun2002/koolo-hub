@@ -121,7 +121,7 @@ SELECT ts, char_name, type, result, run, item FROM events WHERE day>='2026-09-01
 
 ```bash
 # 在阿里云 Ubuntu 上以 root 执行这一行：
-bash <(curl -fsSL https://raw.githubusercontent.com/dpsun/koolo-hub/main/deploy/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/dpsun2002/koolo-hub/main/deploy/bootstrap.sh)
 ```
 
 脚本会自动下载二进制 + install.sh、注册 systemd 服务、创建默认租户并打印
